@@ -1,0 +1,580 @@
+Advanced Python - Shared Clipboard
+
+This Page URL is: http://dhrona.net/p/apnpw
+
+Samples will be available by end of each day at:
+    http://www.chandrashekar.info/files/july11.zip
+    http://www.chandrashekar.info/files/july12.zip
+    
+NOTE: Please do NOT cut (Ctrl-x) by selecting text below. 
+Kindly use Copy-Paste (Ctrl-c / Ctrl-v).
+
+----------------------------------------------------------------- 
+Contact me for any doubts/clarifications after training sessions:
+
+Chandrashekar Babu 
+Email: <training@chandrashekar.info>
+
+Website: http://www.chandrashekar.info/contact.html
+
+LinkedIn: http://in.linkedin.com/in/chandrashekarbabu/en
+
+Phone: 9884386075 (<8:00 AM | >7:00 PM)
+------------------------------------------------------------------
+Python tutorials:
+    https://docs.python.org/3/
+    https://www.diveinto.org/python3/
+    https://python.swaroopch.com/
+    https://greenteapress.com/wp/think-python/
+    https://www.learnpythonthehardway.org/
+Blogs:
+    http://simeonfranklin.com/blog/  [Generators, Decorators]
+    https://jeffknupp.com/
+    http://www.laurentluce.com/
+    https://realpython.com/
+    
+People to follow:
+    Raymond Hettinger (twitter: @raymondh)
+    David Beazley (twitter: @dabeaz)
+    Dan Bader (twitter: @dbader_org)
+    Guido Van Rossum (twitter: @gvanrossum)
+
+YouTube:
+    Raymond Hettinger's talks and videos
+    https://www.youtube.com/playlist?list=PLRVdut2KPAguz3xcd22i_o_onnmDKj3MA
+    
+    David Beazley's talks and videos
+    https://www.youtube.com/user/dabeazllc/videos
+
+Other sites:
+    https://awesome-python.com/
+    http://www.realpython.com/
+    http://pymotw.com/
+    http://zvon.org/comp/r/ref-XPath_2.html
+    http://zvon.org/comp/r/tut-XPath_1.html
+
+-------------------------------------------------------
+# calc_size (Python 3+)
+def calc_size(start_path):
+    from pathlib import Path
+    return sum((path.stat().st_size
+                for path in Path(start_path).glob("**/*")
+                if path.is_file()))
+                
+# calc_size (Legacy)
+def calc_size(start_path):
+    import os
+    total_size = 0
+    for path, subdirs, files in os.walk(start_path):
+        for file in files:
+            file_path = os.path.join(path, file)
+            file_size = os.path.getsize(file_path)
+            total_size += file_size
+    return total_size
+    
+#----- subprocess_popen_example.py ----
+from subprocess import Popen
+from time import sleep
+import signal
+
+p = Popen("./simple_loop.sh")
+print(f"{p.args} launched: ")
+for i in range(5):
+    print("Python program counting", i)
+    sleep(1)
+
+#ret = p.wait()
+#print("script exited: returned", ret)
+#p.kill()
+#print("script was killed...")
+#p.send_signal(signal.SIGTERM)
+
+p.terminate()
+p.send_signal(signal.SIGSTOP)
+sleep(2)
+p.send_signal(signal.SIGCONT)
+
+#--- 
+with Popen("./simple_loop.sh") as p:
+    for i in range(5):
+        print("counting", i)
+        sleep(1)
+    p.terminate()
+    
+#---- simple_pyshell_wrapper.py
+from subprocess import Popen
+import rlcompleter
+import shlex
+
+exit_code = 0
+while True:
+    command = input(f"[{exit_code}]Pyshell> ")
+    #exit_code = Popen(command, shell=True).wait()
+    try:
+        #exit_code = Popen(command.split()).wait()
+        exit_code = Popen(shlex.split(command)).wait()
+    except FileNotFoundError:
+        print(f"{command}: not found")
+
+#--- run_sort.py
+from subprocess import Popen, PIPE
+
+with Popen("sort", stdin=PIPE, encoding="utf8") as sort_proc:
+        while True:
+            line = input("Enter line: ")
+            if not line: break
+            sort_proc.stdin.write(line + "\n")
+
+#------ get_ipaddr_macos ------
+from subprocess import Popen, PIPE
+
+def get_ipaddr_macos_old():
+    ipaddrs = []
+    with Popen("/sbin/ifconfig", stdout=PIPE, encoding="utf8") as p:
+        for line in p.stdout:
+            if "inet" in line:
+                ipaddrs.append(line.split()[1])
+    return ipaddrs
+
+def get_ipaddr_macos():
+    with Popen("/sbin/ifconfig", stdout=PIPE, encoding="utf8") as p:
+        return [ line.split()[1] \
+                 for line in p.stdout \
+                 if "inet" in line ]
+
+if __name__ == '__main__':
+    print(get_ipaddr_macos())
+
+# get_ip_addr_generic.py
+def parse_command_output(command, regex):
+    from subprocess import Popen, PIPE
+    import shlex
+    import re
+    pattern = re.compile(regex, re.VERBOSE | re.DOTALL)
+    with Popen(shlex.split(command), stdout=PIPE, encoding="utf8") as p:
+        for line in p.stdout:
+            for match in pattern.finditer(line):
+                yield match
+
+if __name__ == '__main__':
+
+    ip_regex = r"""
+        (\d{1,3})     # Match first octet (e.g. aaa of aaa.bbb.ccc.ddd )
+        (\.\d{1,3}){3}  # Match next 3 octets preceded by . ( .bbb.ccc.ddd )
+    """
+    for result in parse_command_output(
+                        command="/sbin/ifconfig",
+                        regex=ip_regex):
+        print(result.group())
+
+#---- telnet_session.yml ----
+#host: 192.168.56.101
+#port: 2023
+command: telnet 192.168.56.101 2023
+session: 
+   'archvm login: ': pythonista
+   'Password: ': welcome
+   '\[pythonista@archvm ~\]\$ ':
+       - whoami
+       - uname -a
+       - ls /etc
+       - exit
+
+pip install pyyaml
+pip install pexpect
+
+#---- ssh_session.yml ---
+
+command: ssh -p 12276 user1@dhrona.net
+session:
+   'password: ': welcome
+   '\[user1@moonranger ~\]\$ ':
+       - whoami
+       - uname -a
+       - ls /etc
+       - exit
+
+
+#----- reading yaml file ----
+import yaml 
+with open("telnet_session.yml") as infile: 
+    d = yaml.load(infile, Loader=yaml.CLoader) 
+    
+#---- exercise -----
+
+def pexpect_session(yaml_file, output):
+    pass
+    
+if __name__ == '__main__':
+    import sys
+    pexpect_session("telnet_session.yml", sys.stdout)
+
+#---- pexpect_ftp_download_example.py
+import pexpect
+from getpass import getpass
+
+with pexpect.spawn("ftp ftp.chandrashekar.info", timeout=20) as ftp:
+    ftp.expect("Name (.+):")
+    ftp.sendline("testuser")
+
+    while True:
+        ftp.expect("Password:")
+        password = getpass("Enter password: ")
+        ftp.sendline(password)
+
+        r = ftp.expect([r"230 User logged in.+ftp>", r"530 Login incorrect.+ftp>"])
+        if r == 0:
+            break
+        elif r == 1:
+            print("Incorrect password.")
+            ftp.sendline("user testuser")
+
+    ftp.sendline("cd /www/files")
+
+    ftp.expect("ftp>")
+    ftp.sendline("get xml.zip")
+
+    ftp.expect("ftp>", timeout=30)
+    ftp.sendline("quit")
+
+#----- pexpect_session_yaml.py -----
+
+def pexpect_session(yaml_file, output):
+    import yaml
+    import pexpect
+    with open(yaml_file) as infile:
+        config = yaml.load(infile, Loader=yaml.CLoader)
+
+        with pexpect.spawn(config["command"], encoding="utf8") as proc:
+            try:
+                for prompt, reply in config["session"].items():
+                    proc.expect(prompt)
+                    print(proc.before, file=output)
+                    if isinstance(reply, list):
+                        for cmd in reply:
+                            proc.sendline(cmd)
+                            proc.expect(prompt)
+                            print(proc.before, file=output)
+                    else:
+                        proc.sendline(reply)
+            except pexpect.EOF:
+                print("Program exited.")
+
+if __name__ == '__main__':
+    import sys
+    pexpect_session("telnet_session.yml", sys.stdout)
+
+#### simple_ssh_client_example.py 
+import paramiko
+
+#key = paramiko.RSAKey(data=base64.decodestring('AAA...'))
+#client.get_host_keys().add('ssh.example.com', 'ssh-rsa', key)
+
+client = paramiko.SSHClient()
+client.load_system_host_keys()
+client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+#client.set_missing_host_key_policy(paramiko.RejectPolicy())
+#client.set_missing_host_key_policy(paramiko.WarningPolicy())
+
+#from getpass import getpass
+#password = getpass("Enter password: ")
+
+password = "welcome"
+
+client.connect('192.168.56.101', username='root', password=password)
+stdin, stdout, stderr = client.exec_command('ls /etc/*.conf')
+for line in stdout:
+    print('... ' + line.strip('\n'))
+client.close()
+
+#------ invoke_shell_example.py ----
+from paramiko import SSHClient, AutoAddPolicy
+
+client = SSHClient()
+client.load_system_host_keys()
+client.set_missing_host_key_policy(AutoAddPolicy())
+
+client.connect('192.168.56.101', username='root', password='welcome')
+
+ch = client.invoke_shell()
+stdout = ch.makefile("r")
+stdin = ch.makefile("w")
+stderr = ch.makefile_stderr("r")
+
+stdin.write("echo $$\n")
+print(stdout.readline())
+client.close()
+#-------- exercise for day 1 ------
+# Exercise: Implement this program
+# Connect to multiple hosts as per the
+# ssh_info configuration list provided as
+# argument to ssh_run() function, run commands
+# and capture outputs and make it available to the
+# main code.
+
+ssh_info = [
+    {   "hostname": "192.168.56.101",
+        "port": 22,
+        "username": "root",
+        "password": "welcome",
+        "commands": [
+            "uptime",
+            "uname -a",
+            "date" ]
+    },
+
+    {   "hostname": "192.168.56.102",
+        "port": 22,
+        "username": "root",
+        "password": "welcome",
+        "commands": [
+            "cat /etc/passwd",
+            "cat /proc/loadavg",
+            "uptime" ]
+    },
+]
+
+def ssh_run(ssh_info):
+    pass # TODO: Implement the logic here.
+
+if __name__ == '__main__':
+    for host, result in ssh_run(ssh_info):
+        for command, stdin, stdout, stderr in result:
+            print(f"host: {host}, command: {command}")
+            for line in stdout:
+                print(line)
+            print("-" * 60)
+
+#--------------  ssh_exec_multi_thread.py -----
+#from threading import Thread
+#from multiprocessing import Process as Thread
+#from gevent import monkey
+#monkey.patch_all()
+from threading import Thread
+from queue import Queue
+
+ssh_info = [
+    {   "hostname": "192.168.56.105",
+        "port": 22,
+        "username": "root",
+        "password": "welcome",
+        "commands": [
+            "uptime",
+            "uname -a",
+            "date" ]
+    },
+
+    {   "hostname": "dhrona.net",
+        "port": 12276,
+        "username": "user1",
+        "password": "welcome",
+        "commands": [
+            "cat /etc/passwd",
+            "cat /proc/loadavg",
+            "uptime" ]
+    },
+]
+
+def run_command(client, hostname, command, queue):
+    stdin, stdout, stderr = client.exec_command(command)
+    def getoutput(stream, msg):
+        for line in stream:
+            output = (hostname, command, msg, line)
+            queue.put(output)
+    out_thread = Thread(target=getoutput, args=(stdout, "stdout"))
+    err_thread = Thread(target=getoutput, args=(stderr, "stderr"))
+    out_thread.start()
+    err_thread.start()
+
+def ssh_run(ssh_info):
+    from paramiko import SSHClient, AutoAddPolicy
+    output = Queue(4096)
+    for info in ssh_info:
+        client = SSHClient()
+        client.load_system_host_keys()
+        client.set_missing_host_key_policy(AutoAddPolicy())
+        client.connect(
+                 hostname=info["hostname"],
+                 port=info["port"],
+                 username=info["username"],
+                 password=info["password"])
+        #ssh_args = dict(info.items() - dict(commands=info["commands"]).items())
+        #client.connect(**ssh_args)
+        for command in info["commands"]:
+            Thread(target=run_command, args=(client,
+                                            info["hostname"],
+                                            command,
+                                            output)).start()
+
+    return output
+
+if __name__ == '__main__':
+
+    output = ssh_run(ssh_info)
+    while True:
+        data = output.get()
+        print(data)
+        
+        
+-----  books.xml ---
+<?xml version="1.0"?>
+<catalog>
+   <book id="bk101" country="India" type="technical">
+     this is a test book
+      <author>Gambardella, Matthew</author>
+      <title>XML Developer's Guide</title>
+      <genre>Computer</genre>
+      <price>44.95</price>
+      <publish_date>2000-10-01</publish_date>
+      <description>An in-depth look at creating applications 
+      with XML.</description>
+   </book>
+   <book id="bk102">
+      <author>Ralls, Kim</author>
+      <title>Midnight Rain</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2000-12-16</publish_date>
+      <description>A former architect battles corporate zombies, 
+      an evil sorceress, and her own childhood to become queen 
+      of the world.</description>
+   </book>
+   <book id="bk103">
+      <author>Corets, Eva</author>
+      <title>Maeve Ascendant</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2000-11-17</publish_date>
+      <description>After the collapse of a nanotechnology 
+      society in England, the young survivors lay the 
+      foundation for a new society.</description>
+   </book>
+   <book id="bk104">
+      <author>Corets, Eva</author>
+      <title>Oberon's Legacy</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2001-03-10</publish_date>
+      <description>In post-apocalypse England, the mysterious 
+      agent known only as Oberon helps to create a new life 
+      for the inhabitants of London. Sequel to Maeve 
+      Ascendant.</description>
+   </book>
+   <book id="bk105">
+      <author>Corets, Eva</author>
+      <title>The Sundered Grail</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2001-09-10</publish_date>
+      <description>The two daughters of Maeve, half-sisters, 
+      battle one another for control of England. Sequel to 
+      Oberon's Legacy.</description>
+   </book>
+   <book id="bk106">
+      <author>Randall, Cynthia</author>
+      <title>Lover Birds</title>
+      <genre>Romance</genre>
+      <price>4.95</price>
+      <publish_date>2000-09-02</publish_date>
+      <description>When Carla meets Paul at an ornithology 
+      conference, tempers fly as feathers get ruffled.</description>
+   </book>
+   <book id="bk107">
+      <author>Thurman, Paula</author>
+      <title>Splish Splash</title>
+      <genre>Romance</genre>
+      <price>4.95</price>
+      <publish_date>2000-11-02</publish_date>
+      <description>A deep sea diver finds true love twenty 
+      thousand leagues beneath the sea.</description>
+   </book>
+   <book id="bk108">
+      <author>Knorr, Stefan</author>
+      <title>Creepy Crawlies</title>
+      <genre>Horror</genre>
+      <price>4.95</price>
+      <publish_date>2000-12-06</publish_date>
+      <description>An anthology of horror stories about roaches,
+      centipedes, scorpions  and other insects.</description>
+   </book>
+   <book id="bk109">
+      <author>Kress, Peter</author>
+      <title>Paradox Lost</title>
+      <genre>Science Fiction</genre>
+      <price>6.95</price>
+      <publish_date>2000-11-02</publish_date>
+      <description>After an inadvertant trip through a Heisenberg
+      Uncertainty Device, James Salway discovers the problems 
+      of being quantum.</description>
+   </book>
+   <book id="bk110">
+      <author>O'Brien, Tim</author>
+      <title>Microsoft .NET: The Programming Bible</title>
+      <genre>Computer</genre>
+      <price>36.95</price>
+      <publish_date>2000-12-09</publish_date>
+      <description>Microsoft's .NET initiative is explored in 
+      detail in this deep programmer's reference.</description>
+   </book>
+   <book id="bk111">
+      <author>O'Brien, Tim</author>
+      <title>MSXML3: A Comprehensive Guide</title>
+      <genre>Computer</genre>
+      <price>36.95</price>
+      <publish_date>2000-12-01</publish_date>
+      <description>The Microsoft MSXML3 parser is covered in 
+      detail, with attention to XML DOM interfaces, XSLT processing, 
+      SAX and more.</description>
+   </book>
+   <book id="bk112">
+      <author>Galos, Mike</author>
+      <title>Visual Studio 7: A Comprehensive Guide</title>
+      <genre>Computer</genre>
+      <price>49.95</price>
+      <publish_date>2001-04-16</publish_date>
+      <description>Microsoft Visual Studio 7 is explored in depth,
+      looking at how Visual Basic, Visual C++, C#, and ASP+ are 
+      integrated into a comprehensive development 
+      environment.</description>
+   </book>
+</catalog>
+
+https://tinyurl.com/pypi-search
+
+def pypi_search(term):
+    # TODO: Populate result list with each record as a dictionary
+    # searched result.
+    result = []
+    from robobrowser import RoboBrowser
+    br = RoboBrowser(parser="lxml")
+    br.open("https://pypi.org/")
+    if not br.response.ok:
+        raise ValueError("Failed at https://pypi.org/")
+    form = br.get_form()
+    form["q"] = term
+    br.submit_form(form)
+    if not br.response.ok:
+        raise ValueError("Failed at form submit")
+
+    links = br.select("a.package-snippet")[:5]
+    for i, link in enumerate(links):
+        rec = {}
+        rec["index"] = i
+        rec["href"] = link["href"]
+        rec["name"] = link.span.text
+        rec["description"] = link.p.text
+        result.append(rec)
+
+    return result
+
+#----- exercise ----
+LOGIN_URL = "http://testing.chandrashekar.info/wp-login"
+ADMIN_USERNAME = "pythonista"
+ADMIN_PASSWORD = "w3lc0me"
+
+ADMIN_URL = "http://testing.chandrashekar.info/wp-admin/"
+NEW_POST_URL = "http://testing.chandrashekar.info/wp-admin/post-new.php"
+
+POST_SUCCESS_URL = "http://testing.chandrashekar.info/wp-admin/post.php?post=9&action=edit&message=6"
+
+

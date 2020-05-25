@@ -1,0 +1,8 @@
+command: ssh -p 12276 user1@dhrona.net
+session:
+   'password: ': welcome
+   '\[user1@moonranger ~\]\$ ':
+       - whoami
+       - uname -a
+       - ls /etc
+       - exit
